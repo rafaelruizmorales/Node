@@ -1,0 +1,4 @@
+node_modules
+.env
+PrivateNotes.md
+.DS_Store
