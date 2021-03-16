@@ -32,10 +32,10 @@
             "version": "1.0.0",
             "description": "",
             "main": "index.js",
-            // HERE: This allow us to use import syntax on files
+            //This-allow-us-to-use-import-syntax-on-files
             "type": "module"
             "scripts": {
-                // HERE: This will re-run the server automatically after changes
+                //This-will-re-run-the-server-automatically-after-changes
                 "start" : "nodemon index.js" 
             },
             ...
@@ -113,7 +113,8 @@
     3. Controllers
         - Create the functions that are linked to our routes.
         - Use the Model (Schema)
-        - Example: 
+        
+        - Example Controller without AUTH:
 
         ```javascript
             import mongoose from 'mongoose';
@@ -132,6 +133,29 @@
             }
         ```
 
+        - Example Controller with AUTH:
+
+        ```javascript
+        export const createPost = async (req, res) => {
+            const post = req.body;
+
+            // We can use req.userId since this route uses the auth middleware and we defined req.userId there
+            if (!req.userId) {
+                return res.json({ message: "User not authenticated" });
+            }
+
+            const newPostMessage = new PostMessage(post);
+
+            try {
+                await newPostMessage.save();
+
+                res.status(201).json(newPostMessage );
+            } catch (error) {
+                res.status(409).json({ message: error.message });
+            }
+        }
+        ```
+
     4. Models
         - Create the shape of our data (Schema)
         - Example:
@@ -146,6 +170,7 @@
                 creator: String,
                 tags: [String],
                 selectedFile: String,
+                // Likes contains an array of userIds
                 likes: { type: [String], default: [] },
                 createdAt: { type: Date, default: new Date() },
             });
@@ -167,7 +192,7 @@
 
                 -> User Clicks the like button ->
                 -> The auth middleware check if user is authenticated ->
-                -> if it is, next will be executed, in our case the like Controller 
+                -> if it is, next will be executed, in our case the "likePost" Controller
             */
 
             const auth = async (req, res, next) => {
