@@ -3,6 +3,7 @@ import mongoose from 'mongoose';
 import cors from 'cors';
 
 import postRoutes from './routes/posts.js';
+import userRoutes from './routes/users.js';
 
 import dotenv from 'dotenv'
 
@@ -17,6 +18,7 @@ app.use(cors());
 
 // Routes after cors()!!!
 app.use('/posts', postRoutes);
+app.use('/user', userRoutes);
                
 const CONNECTION_STRING = process.env.CONNECTION_STRING
 const PORT = process.env.PORT || 5000;

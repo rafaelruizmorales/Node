@@ -21,7 +21,7 @@
 - npm install ... 
 
     ```bash
-        npm install express cors mongoose@5.11.15 nodemon dotenv
+        npm install express cors mongoose@5.11.15 nodemon dotenv bcryptjs jsonwebtoken
     ```
 
 -  Update *package.json* adding these lines:
@@ -32,20 +32,13 @@
             "version": "1.0.0",
             "description": "",
             "main": "index.js",
-            "type": "module" // HERE: This allow us to use import syntax on files
+            // HERE: This allow us to use import syntax on files
+            "type": "module"
             "scripts": {
-                "start" : "nodemon index.js" // HERE: This will re-run the server automatically after changes
+                // HERE: This will re-run the server automatically after changes
+                "start" : "nodemon index.js" 
             },
-            "keywords": [],
-            "author": "",
-            "license": "ISC",
-            "dependencies": {
-                "cors": "^2.8.5",
-                "dotenv": "^8.2.0",
-                "express": "^4.17.1",
-                "mongoose": "^5.11.15",
-                "nodemon": "^2.0.7"
-            }
+            ...
         }
     ```
 - Steps:
@@ -77,6 +70,7 @@
 
             // Routes after cors()!!!
             app.use('/posts', postRoutes);
+            app.use('/user', userRoutes);
                         
             const CONNECTION_STRING = process.env.CONNECTION_STRING
             const PORT = process.env.PORT || 5000;
@@ -90,6 +84,7 @@
 
     2. Routes
         - Define the endpoints we can later use.
+        - Use the Middleware, so we can use "protected routes"
         - Example:
 
         ```javascript
@@ -97,10 +92,20 @@
 
             import { getPost } from '../controllers/posts.js';
 
+            import auth from '../middleware/auth.js'
+
             const router = express.Router();
 
-                // GET -> http://localhost:5000/posts/12                200 | 404
-                router.get('/:id', getPost);
+                // 🔐 Routes that can be visited by not logged in users
+
+                    // GET -> http://localhost:5000/posts/12
+                    router.get('/:id', getPost);
+
+                
+                // 🔒 Routes that need auth -> User need to be logged in!
+
+                    // DELETE -> http://localhost:5000/posts/12
+                    router.delete('/:id', auth, deletePost);
             
             export default router;
         ```
@@ -120,7 +125,6 @@
 
                 try {
                     const post = await PostMessage.findById(id);
-                    
                     res.status(200).json(post);
                 } catch (error) {
                     res.status(404).json({ message: error.message });
@@ -130,7 +134,7 @@
 
     4. Models
         - Create the shape of our data (Schema)
-        -Example:
+        - Example:
 
         ```javascript
             import mongoose from 'mongoose';
@@ -142,20 +146,56 @@
                 creator: String,
                 tags: [String],
                 selectedFile: String,
-                likeCount: { 
-                    type: Number, 
-                    default: 0 
-                },
-                createdAt: {
-                    type: Date,
-                    default: new Date(),
-                },
+                likes: { type: [String], default: [] },
+                createdAt: { type: Date, default: new Date() },
             });
 
-            var PostMessage = mongoose.model('PostMessage', postSchema);
+            export default mongoose.model('PostMessage', postSchema);
+        ```
+    
+    5. Middleware
+        - A middleware is basically a function that will the receive the Request and Response objects, just like your route Handlers do. As a third argument you have another function which you should call once your middleware code completed.
+        - If the current middleware function does not end the request-response cycle, it must call next() to pass control to the next middleware function. Otherwise, the request will be left hanging.
+        - We use the middleware in our routes
+        - Example:
 
-            export default PostMessage;
-        ``` 
+        ```javascript
+            import jwt from "jsonwebtoken";
+
+            /*
+                UseCase: An user wants to like a post
+
+                -> User Clicks the like button ->
+                -> The auth middleware check if user is authenticated ->
+                -> if it is, next will be executed, in our case the like Controller 
+            */
+
+            const auth = async (req, res, next) => {
+                try {
+                    const token = req.headers.authorization.split(" ")[1];
+                    
+                    // To differenciate between our own or the google one
+                    const isCustomAuth = token.length < 500;
+
+                    let decodedData;
+
+                    if (token && isCustomAuth) {      
+                        decodedData = jwt.verify(token, 'SecretOrPrivateKey');
+                        req.userId = decodedData?.id;
+                    } else { // Google Auth Token
+                        decodedData = jwt.decode(token);
+                        // sub is google's name for specific id that differenciates every single google user
+                        req.userId = decodedData?.sub;
+                    }    
+
+                    next();
+                } catch (error) {
+                    console.log(error);
+                }
+            };
+
+            export default auth;
+        ```
 
 ## 🤡 Client
 
@@ -168,7 +208,7 @@
 - npm install ... 
 
     ```bash
-        npm install react-redux @material-ui/core
+        npm install react-redux @material-ui/core jwt-decode react-google-login
     ```
 
 ## 🎛 Deployment

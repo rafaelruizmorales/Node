@@ -44,6 +44,11 @@ export const getPost = async (req, res) => {
 export const createPost = async (req, res) => {
     const post = req.body;
 
+    // We can use req.userId since this route uses the auth middleware and we defined req.userId there
+    if (!req.userId) {
+        return res.json({ message: "User not authenticated" });
+    }
+
     const newPostMessage = new PostMessage(post);
 
     try {
@@ -58,6 +63,11 @@ export const createPost = async (req, res) => {
 export const updatePost = async (req, res) => {
     const { id: _id } = req.params;
     const post = req.body;
+
+    // We can use req.userId since this route uses the auth middleware and we defined req.userId there
+    if (!req.userId) {
+        return res.json({ message: "User not authenticated" });
+    }
 
     if (!mongoose.Types.ObjectId.isValid(_id)) {
         return res.status(404).send(`No post with id: ${_id}`);
@@ -75,6 +85,11 @@ export const updatePost = async (req, res) => {
 export const deletePost = async (req, res) => {
     const { id } = req.params;
 
+    // We can use req.userId since this route uses the auth middleware and we defined req.userId there
+    if (!req.userId) {
+        return res.json({ message: "User not authenticated" });
+    }
+
     if (!mongoose.Types.ObjectId.isValid(id)) {
         return res.status(404).send(`No post with id: ${id}`);
     }
@@ -87,15 +102,32 @@ export const deletePost = async (req, res) => {
 export const likePost = async (req, res) => {
     const { id } = req.params;
 
+    // We can use req.userId since this route uses the auth middleware and we defined req.userId there
+    if (!req.userId) {
+        return res.json({ message: "User not authenticated" });
+    }
+
     if (!mongoose.Types.ObjectId.isValid(id)) {
         return res.status(404).send(`No post with id: ${id}`);
     }
 
     try {
         const post = await PostMessage.findById(id);
+
+        // To avoid users like the same post more than once and be able to add/remove likes
+        const index = post.likes.findIndex((id) => id === String(req.userId));
+
+        if (index === -1) {
+            post.likes.push(req.userId);
+        } else {
+            post.likes = post.likes.filter( id => 
+                id !== String(req.userId)
+            );
+        }
+
         const updatedPost = await PostMessage.findByIdAndUpdate(
-            id, 
-            { likeCount: post.likeCount + 1 },
+            id,
+            post,
             { new: true }
         );
         
