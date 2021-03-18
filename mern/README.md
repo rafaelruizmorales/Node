@@ -227,14 +227,20 @@
 - create React App
 
     ```bash
-        npx create react app client
+        npx create-react-app client
     ```
 
 - npm install ... 
 
     ```bash
-        npm install react-redux @material-ui/core jwt-decode react-google-login
+        npm install react-router-dom redux react-redux redux-thunk jwt-decode axios react-hook-form
     ```
+- (Beautiful) Desing:
+
+    ![Application Design](Memories_design.png)
+
+- Steps:
+    1. Create the Routing
 
 ## 🎛 Deployment
 
