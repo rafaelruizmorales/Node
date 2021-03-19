@@ -5,50 +5,42 @@ import User from '../models/user.js'
 
 // Sign up means "to register; to create an account"
 export const signup = async (req, res) => {
-    const { email, password, confirmPassword, firstName, lastName } = req.body
+    const { email, password, confirmPassword, firstName, lastName } = req.body;
 
     try {
-
         const existingUser = await User.findOne({ email })
 
         if (existingUser) {
-            return res.status(400).json({ message: `User with email ${email} already exists` });
+            return res.status(400).json({ message: "User already exists" });
         }
 
         if (password !== confirmPassword) {
             return res.status(400).json({ message: "Passwords don't match" })
         }
 
-        if (!firstName) {
-            return res.status(400).json({ message: "FirstName is required" })
-        }
+        const hashedPassword = await bcrypt.hash(password, 12);
 
-        if (!lastName) {
-            return res.status(400).json({ message: "LastName is required" })
-        }
-
-        const hashPassword = await bcrypt.hash(password, 12); // 12 is the salt
-
-        const result = User.create( 
-            {
+        const result = await User.create(
+            { 
                 email,
-                password: hashPassword,
-                name: `${firstName} ${lastName}`
-            } 
+                password: hashedPassword,
+                name: `${firstName} ${lastName}` 
+            }
         );
 
         const token = jwt.sign(
-            { email: result.email, id: result._id },
+            { email: result.email, id: result._id }, 
             'SecretOrPrivateKey',
-            { expiresIn: '1h' }
-        )
+            { expiresIn: "1h" }
+        );
 
-        return res.status(200).json({ result, token })
+        res.status(201).json({ result, token });
 
     } catch (error) {
         res.status(500).json({ message: "Something went wrong" });
+        console.log(error);
     }
-}
+};
 
 // Sign in and log in are synonyms
 export const signin = async (req, res) => {
