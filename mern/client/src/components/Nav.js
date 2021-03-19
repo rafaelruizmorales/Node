@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 
 import { Link, useHistory, useLocation } from 'react-router-dom';
 
-import * as actionType from '../redux/auth/authTypes'
+import * as authActionType from '../redux/auth/authTypes'
 
 import { useDispatch } from 'react-redux';
 
@@ -18,7 +18,7 @@ function Nav() {
     const location = useLocation();
 
     const logout = useCallback(() => {
-        dispatch({ type: actionType.LOGOUT });
+        dispatch({ type: authActionType.LOGOUT });
 
         history.push('/');
 
